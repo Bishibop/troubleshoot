@@ -45,6 +45,91 @@ For more details on creating the custom resource files that drive support-bundle
 
 And see our other tool [sbctl](https://github.com/replicatedhq/sbctl) that makes it easier to interact with support bundles using `kubectl` commands you already know
 
+## LLM Analyzer (AI-Powered Analysis)
+
+The LLM analyzer uses OpenAI to automatically analyze Kubernetes logs and identify issues. It understands context, finds root causes, and correlates problems across multiple components.
+
+### What's Different
+
+- **No rules to write** - AI understands logs and errors automatically
+- **Finds root causes** - Identifies why problems occur, not just symptoms
+- **Correlates issues** - Understands relationships (e.g., DB crash → app failures)
+- **Natural language** - Describe problems in plain English
+
+### Setup
+
+1. **Get an OpenAI API key** from [platform.openai.com](https://platform.openai.com)
+2. **Create a `.env` file**:
+   ```bash
+   echo 'OPENAI_API_KEY=sk-...' > .env
+   ```
+   The tool automatically loads `.env` files.
+
+### How to Use
+
+Add the `llm` analyzer to your spec:
+
+```yaml
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+spec:
+  collectors:
+    - logs:
+        name: app-logs
+        namespace: default
+  analyzers:
+    - llm:
+        checkName: "AI Analysis"
+        collectorName: "app-logs"
+        fileName: "**/*.log"  # Use **/* for nested dirs
+        model: "gpt-4o-mini"  # Cost-effective, ~$0.01 per analysis
+        outcomes:
+          - fail:
+              when: "issue_found"
+              message: "Found: {{.Summary}}"
+          - pass:
+              message: "No issues detected"
+```
+
+Run with problem description:
+```bash
+./bin/support-bundle spec.yaml --problem-description "App keeps crashing"
+```
+
+Or re-analyze existing bundles:
+```bash
+./bin/analyze bundle.tar.gz --analyzers spec.yaml
+```
+
+### Model Selection Guide
+
+- **gpt-4o-mini**: (Default) Cost-effective with 128K context window, recommended for most use cases ($0.15/1M input tokens)
+- **gpt-5**: Most advanced model for complex issues requiring cutting-edge reasoning (pricing TBD)
+
+### Enhanced Output
+
+The LLM analyzer now provides structured, actionable output including:
+- **Root Cause Analysis**: Identified root cause of the problem
+- **Recommended Commands**: kubectl commands to resolve issues
+- **Affected Resources**: List of impacted pods and services
+- **Next Steps**: Ordered action items
+- **Documentation Links**: Relevant Kubernetes documentation
+- **Related Issues**: Other potential problems found
+
+Template variables available in outcome messages:
+- `{{.Summary}}`, `{{.Issue}}`, `{{.Solution}}`, `{{.RootCause}}`
+- `{{.Commands}}`, `{{.AffectedPods}}`, `{{.NextSteps}}`
+- `{{.Severity}}`, `{{.Confidence}}`
+
+### Examples
+
+See [examples/analyzers/llm-analyzer.yaml](examples/analyzers/llm-analyzer.yaml) for complete examples including:
+- Using LLM analyzer alongside traditional analyzers
+- Re-analyzing existing bundles
+- Different model configurations
+- Smart file selection with priority patterns
+- Enhanced output templates
+
 # Community
 
 For questions about using Troubleshoot, how to contribute and engaging with the project in any other way, please refer to the following resources and channels.

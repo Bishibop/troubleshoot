@@ -307,4 +307,25 @@ type Analyze struct {
 	Event                    *EventAnalyze             `json:"event,omitempty" yaml:"event,omitempty"`
 	NodeMetrics              *NodeMetricsAnalyze       `json:"nodeMetrics,omitempty" yaml:"nodeMetrics,omitempty"`
 	HTTP                     *HTTPAnalyze              `json:"http,omitempty" yaml:"http,omitempty"`
+	LLM                      *LLMAnalyze               `json:"llm,omitempty" yaml:"llm,omitempty"`
+}
+
+type LLMAnalyze struct {
+	AnalyzeMeta      `json:",inline" yaml:",inline"`
+	Outcomes         []*Outcome `json:"outcomes" yaml:"outcomes"`
+	CollectorName    string     `json:"collectorName,omitempty" yaml:"collectorName,omitempty"`
+	FileName         string     `json:"fileName,omitempty" yaml:"fileName,omitempty"`
+	MaxFiles         int        `json:"maxFiles,omitempty" yaml:"maxFiles,omitempty"`
+	MaxSize          int        `json:"maxSize,omitempty" yaml:"maxSize,omitempty"`
+	Model            string     `json:"model,omitempty" yaml:"model,omitempty"`
+	// Smart file selection fields
+	PriorityPatterns []string   `json:"priorityPatterns,omitempty" yaml:"priorityPatterns,omitempty"`
+	SkipPatterns     []string   `json:"skipPatterns,omitempty" yaml:"skipPatterns,omitempty"`
+	PreferRecent     bool       `json:"preferRecent,omitempty" yaml:"preferRecent,omitempty"`
+	// Structured output control
+	UseStructuredOutput bool   `json:"useStructuredOutput,omitempty" yaml:"useStructuredOutput,omitempty"`
+	// Problem description can be set in the analyzer spec
+	ProblemDescription  string `json:"problemDescription,omitempty" yaml:"problemDescription,omitempty"`
+	// API endpoint override for testing/proxies
+	APIEndpoint         string `json:"apiEndpoint,omitempty" yaml:"apiEndpoint,omitempty"`
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -53,6 +55,35 @@ func runTroubleshoot(v *viper.Viper, args []string) error {
 	mainBundle, additionalRedactors, err := loadSpecs(ctx, args, client)
 	if err != nil {
 		return err
+	}
+
+	// Check if we have any LLM analyzers and handle problem description
+	hasLLMAnalyzer := false
+	for _, a := range mainBundle.Spec.Analyzers {
+		if a.LLM != nil {
+			hasLLMAnalyzer = true
+			break
+		}
+	}
+
+	if hasLLMAnalyzer {
+		problemDescription := v.GetString("problem-description")
+
+		// If no problem description provided and interactive mode, prompt for it
+		if problemDescription == "" && v.GetBool("interactive") && isatty.IsTerminal(os.Stdin.Fd()) {
+			fmt.Print("Please describe the problem you're experiencing: ")
+			reader := bufio.NewReader(os.Stdin)
+			problemDescription, err = reader.ReadString('\n')
+			if err != nil {
+				return errors.Wrap(err, "failed to read problem description")
+			}
+			problemDescription = strings.TrimSpace(problemDescription)
+		}
+
+		// Set problem description via environment variable for LLM analyzer
+		if problemDescription != "" {
+			os.Setenv("PROBLEM_DESCRIPTION", problemDescription)
+		}
 	}
 
 	// For --dry-run, we want to print the yaml and exit
